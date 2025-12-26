@@ -1,6 +1,6 @@
 [[FINAL-APPROVED]]
 # Algites Repository and Artifact Naming Standard
-**Version:** 1.5
+**Version:** 1.7
 **Status:** Normative
 **Scope:** All repositories and build artifacts within the Algites ecosystem
 
@@ -29,8 +29,8 @@ The goals are:
 ## 2. Terminology
 
 - **Visibility** – governance scope of a repository or artifact (`pub` or `priv`).
-- **Role** – technical role of a repository or artifact (`platform`, `product`, `lib`, `tool`, etc.).
-- **BusinessName** – PascalCase domain or product concept (e.g., `Modustro`, `MyGreatProduct`).
+- **Role** – technical role of a repository or artifact (`pltf`, `app`, `lib`, `tool`, `frmw`, etc.).
+- **BusinessName** – PascalCase domain or product/application concept (e.g., `Modustro`, `MyGreatProduct`).
 - **RepoSubname** – optional lowercase technical qualifier of a repository (e.g., `common`, `core`, `backend`).
 - **Module Path** – dot-separated identifier of a module or component within a repository.
   It consists of zero or more **module path folders** followed by a mandatory **module root folder**:
@@ -67,8 +67,8 @@ Where:
 ### 3.3 Examples
 
 ```
-pub.platform.Modustro
-priv.product.Modustro
+pub.pltf.Modustro
+priv.app.Modustro
 priv.lib.Customers.common
 pub.tool.Java
 priv.tool.Java
@@ -106,15 +106,15 @@ Where:
 From repository:
 
 ```
-pub.platform.Modustro
+pub.pltf.Modustro
 ```
 
 Artifacts:
 
 ```
-pub.platform.Modustro_core
-pub.platform.Modustro_languages
-pub.platform.Modustro_mps.plugin
+pub.pltf.Modustro_core
+pub.pltf.Modustro_languages
+pub.pltf.Modustro_mps.plugin
 ```
 
 From repository:
@@ -175,8 +175,8 @@ The groupId expresses only the **business and technical domain**, not governance
 ### 5.4 Examples
 
 ```
-eu.algites.platform.modustro
-eu.algites.product.modustro.studio
+eu.algites.pltf.modustro
+eu.algites.app.modustro.studio
 eu.algites.lib.customers
 eu.algites.lib.customers.common
 eu.algites.tool.java
@@ -289,7 +289,7 @@ The resulting JAR file name MUST follow Maven convention:
 Examples:
 
 ```
-pub.platform.Modustro_core-1.2.0.jar
+pub.pltf.Modustro_core-1.2.0.jar
 priv.lib.Customers.common_bai.blfacadeintf-1.0.0.jar
 priv.lib.Customers.common_bai.blfacadeintf-tests-1.0.0.jar
 pub.tool.Java_build.parent-1.4.0.jar
@@ -301,12 +301,12 @@ pub.tool.Java_build.parent-1.4.0.jar
 
 Common roles include:
 
-- `platform` – Algites platform components
-- `product` – concrete applications
+- `pltf` – platform - Algites platform components
+- `app` – application - concrete applications
 - `lib` – reusable libraries
 - `tool` – build and development tools
-- `framework` – generic frameworks
-- `lab` – experimental or laboratory work
+- `frmw` - framework – generic frameworks
+- `lab` – laboratory - experimental or laboratory work
 
 New roles MAY be introduced but MUST be lowercase and documented.
 
