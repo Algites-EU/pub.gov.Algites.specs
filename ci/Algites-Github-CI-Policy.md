@@ -46,16 +46,18 @@ The CI pipeline chooses a **mode** based on the branch name:
 Publishing is enabled on these branches (hotfix is treated like develop):
 
 - `main`
+- `master`
 - `develop`
 - `hotfix`
 - `*/main`
+- `*/master`
 - `*/develop`
 - `*/hotfix`
 
 Examples (version branching):
 
-- `j17/main`, `j17/develop`, `j17/hotfix`
-- `j25/main`, `j25/develop`, `j25/hotfix`
+- `j17/main`, `j17/master`, `j17/develop`, `j17/hotfix`
+- `j25/main`, `j25/master`, `j25/develop`, `j25/hotfix`
 
 **Mode = publish**
 
@@ -244,7 +246,7 @@ If issue references are detected (from branch name and/or commit subjects), CI w
 - Prefer version branching (`j17/*`, `j25/*`) to keep cross-version feature migration explicit.
 - Use `feature-testrun/*` for safe CI experiments without publishing.
 - Use `feature/*` for normal development with fast compile feedback.
-- Keep publishing limited to publish branches (`main`, `develop`, `hotfix`, and versioned variants).
+- Keep publishing limited to publish branches (`main`, `master`, `develop`, `hotfix`, and versioned variants).
 - Use the identification of the issues everywhere it is possible and reasonable to keep the transparency of the changes ión highes possible level
 
 ---
