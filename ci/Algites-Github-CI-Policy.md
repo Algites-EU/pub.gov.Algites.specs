@@ -9,13 +9,15 @@ The goal is to provide a predictable, low-friction workflow:
 - Keep **Maven** compatible and up-to-date (typically when Maven config changes).
 - Enable **safe test-only runs** on dedicated branches without publishing.
 - Enable **fast compile-only runs** on feature branches.
-- Support Algites-style **version branches** (e.g. `j17/*`, `j21/*`, `j25/*`) naturally.
+- Support Algites-style **variant branches** (e.g. `jvm17/*`, `jvm21/*`, `and21/*`, `mps2025.1/*`) naturally.
+
+> In Algites, a *variant* prefix encodes the **target platform baseline**, e.g. `jvm17` (JVM runtime ≥ 17), `and21` (Android minSdk 21), or `mps2025.1` (MPS toolchain version).
 
 ---
 
 ## 1. Terminology
 
-- **Stub workflow**: a small workflow committed inside each repository (e.g. `.github/workflows/publish-gradle.yml`),
+- **Stub workflow**: a small workflow committed inside each repository (e.g. `.github/workflows/algites-ci.yml` or `.github/workflows/publish-gradle.yml`),
   which triggers on push / manual dispatch and calls the central reusable workflow.
 - **Central workflow**: the reusable workflow hosted centrally (e.g. in `priv.tool.Java`) that contains the logic for:
   - deciding what to do based on branch name,
@@ -54,10 +56,12 @@ Publishing is enabled on these branches (hotfix is treated like develop):
 - `*/develop`
 - `*/hotfix`
 
-Examples (version branching):
+Examples (variant branching):
 
-- `j17/main`, `j17/master`, `j17/develop`, `j17/hotfix`
-- `j25/main`, `j25/master`, `j25/develop`, `j25/hotfix`
+- `jvm17/main`, `jvm17/master`, `jvm17/develop`, `jvm17/hotfix`
+- `jvm21/main`, `jvm21/master`, `jvm21/develop`, `jvm21/hotfix`
+- `and21/main`, `and21/develop`, `and21/hotfix` (Android variant, if used)
+- `mps2025.1/main`, `mps2025.1/develop` (MPS variant, if used)
 
 **Mode = publish**
 
@@ -70,8 +74,9 @@ Branches containing the segment `feature-testrun` are treated as test-only:
 Examples:
 
 - `feature-testrun/ci-experiment`
-- `j17/feature-testrun/maven-compat`
-- `j25/feature-testrun/gradle-plugin-upgrade`
+- `jvm17/feature-testrun/maven-compat`
+- `jvm21/feature-testrun/gradle-plugin-upgrade`
+- `and21/feature-testrun/android-ci-experiment`
 
 **Mode = test**
 
@@ -87,7 +92,7 @@ Feature branches are compiled without tests:
 Examples:
 
 - `feature/ci-experiment`
-- `j17/feature/ID.123_maven-compat`
+- `jvm17/feature/ID.123_maven-compat`
 
 **Mode = compile**
 
@@ -207,7 +212,7 @@ Actions **Job Summary** as clickable links.
 For feature branches, prefix the feature “slug” with an explicit **ID marker** and terminate it with an underscore:
 
 - `feature/ID.123_some-description`
-- `j17/feature/ID.123_some-description`
+- `jvm17/feature/ID.123_some-description`
 - `feature-testrun/ID.123_ci-experiment`
 
 Cross-repository shorthand (Algites-EU only) is also supported:
@@ -215,7 +220,7 @@ Cross-repository shorthand (Algites-EU only) is also supported:
 - `feature/ID.pub.tool.Java-123_some-description`
 - `j25/feature-testrun/ID.pub.tool.Java-123_ci-experiment`
 
-> The `ID.` prefix is **required** in branch names to avoid accidental matches (e.g. version branches like `j17/*`).
+> The `ID.` prefix is **required** in branch names to avoid accidental matches (e.g. variant branches like `jvm17/*` or `and21/*`).
 > The underscore `_` acts as the delimiter that ends the issue reference.
 
 ### 8.2 Commit message convention (flexible)
@@ -243,7 +248,7 @@ If issue references are detected (from branch name and/or commit subjects), CI w
 
 ## 9. Recommendations
 
-- Prefer version branching (`j17/*`, `j25/*`) to keep cross-version feature migration explicit.
+- Prefer variant branching (`jvm17/*`, `jvm21/*`, `and21/*`, `mps2025.1/*`) to keep cross-variant feature migration explicit.
 - Use `feature-testrun/*` for safe CI experiments without publishing.
 - Use `feature/*` for normal development with fast compile feedback.
 - Keep publishing limited to publish branches (`main`, `master`, `develop`, `hotfix`, and versioned variants).
