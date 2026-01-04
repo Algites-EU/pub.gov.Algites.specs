@@ -46,10 +46,10 @@ Creation of the releases or nightly build deployments to the artifact repositori
 
 The CI pipeline chooses a **mode** based on the branch name:
 
-- **verify**: run all tests with packaging.
-- **test**: run tests only; **no** publish/deploy/install.
-- **compile**: compile only; **no** tests and **no** publish/deploy/install.
-- **skip**: exit early; no compile/test/publish.
+- **approval**: run all tests with packaging.
+- **verification**: run all tests only.
+- **construction**: compile only of all product and develop classes.
+- **skip**: exit early; no construction/verification/approval.
 
 ---
 
@@ -152,27 +152,27 @@ Add an optional file at repository root:
 Example:
 
 ```properties
-build-tool=maven
+algites.build-tool=maven
 ```
 
 Supported values:
 
-- `build-tool=gradle`
-- `build-tool=maven`
-- `build-tool=auto`
+- `algites.build-tool=gradle`
+- `algites.build-tool=maven`
+- `algites.build-tool=auto`
 
 If the file is missing (or set to `auto`), optimized auto-selection is used.
 
 ##### 2.1.5.2 Optimized auto-selection rules
 
-If `build-tool` is not forced (file missing or set to `auto`, and workflow input is `auto`):
+If `algites.build-tool` is not forced (file missing or set to `auto`, and workflow input is `auto`):
 
 - If **POM changed** → run **Maven only**
 - Else if **Gradle config changed** → run **Gradle**
 - Else (no POM/Gradle config change) → run **Gradle**
 - If **both POM and Gradle config changed** → run **both Maven and Gradle**
 
-If `build-tool` is forced to `maven` or `gradle`, only that tool runs (even if both configs changed).
+If `algites.build-tool` is forced to `maven` or `gradle`, only that tool runs (even if both configs changed).
 
 ##### 2.1.5.3 Practical note (double execution)
 
@@ -184,17 +184,17 @@ change Maven + Gradle config together **in one commit** (or one push).
 
 #### 2.1.6. What Gets Executed (by Mode)
 
-##### 2.1.6.1 Mode = verify
+##### 2.1.6.1 Mode = approval
 
 - Gradle (default): `./gradlew check`
 - Maven (default): `mvn verify`
 
-##### 2.1.6.2 Mode = test
+##### 2.1.6.2 Mode = verification
 
 - Gradle (default): `./gradlew test integrationTest`
 - Maven (default): `mvn -DskipPackaging=true verify`
 
-##### 2.1.6.3 Mode = compile
+##### 2.1.6.3 Mode = construction
 
 - Gradle (default): `./gradlew testClasses`
 - Maven (default): `mvn test-compile`
@@ -318,11 +318,11 @@ Lane meaning:
 To use the lanes on the project, the repo MUST contain `algites-repository.properties` in repository root with the defined lane identification:
 
 ```properties
-repo.lane=1.1
+algites.repository.lane=1.1
 ```
 
 CI enforces:
-- If the branch name contains `/lane/<X>/`, then `repo.lane` must equal `<X>`.
+- If the branch name contains `/lane/<X>/`, then `algites.repository.lane` must equal `<X>`.
 
 > To enforce this as a *hard rule*, protect branches (e.g. `*/lane/*`) and require the CI status check.
 
@@ -362,9 +362,9 @@ The unified CI workflow computes the snapshot version and then runs either Gradl
 `algites-repository.properties` (optional):
 
 ```properties
-build-tool=auto     # default
-# build-tool=gradle
-# build-tool=maven
+algites.build-tool=auto     # default
+# algites.build-tool=gradle
+# algites.build-tool=maven
 ```
 
 In `auto`, CI prefers Gradle if a Gradle wrapper / build files exist; otherwise Maven if a root `pom.xml` exists.
@@ -382,7 +382,7 @@ Releases are **explicit** and start from the GitHub UI:
   - `jvm17/lane/1.1` (or any other lane branch)
 
 The release workflow will:
-1) validate lane consistency (`repo.lane` vs branch lane)
+1) validate lane consistency (`algites.repository.lane` vs branch lane)
 2) compute next `C` from tags
 3) create a new tag `vA.B.C-variant`
 4) publish artifacts (Gradle or Maven, according to selection / override)
@@ -434,7 +434,7 @@ Inputs:
 
 The CI workflow:
 - creates `*/lane/<new_lane>` from `*/lane/<source_lane>`
-- updates `repo.lane=<new_lane>` in the new branch
+- updates `algites.repository.lane=<new_lane>` in the new branch
 - pushes the new branch
 
 ---
@@ -460,6 +460,10 @@ If different artifacts must have independent version lifecycles, split them into
 If any of these are deal-breakers for a particular repo, you can still fall back to “version in a single file” (with more merge conflicts) or maintain separate version tracks per module (with more complexity).
 
 ### 3.2 Github Actions specific Policy
+
+(TBD)
+
+---
 
 
 
