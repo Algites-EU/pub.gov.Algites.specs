@@ -121,91 +121,351 @@ All branches not matching the above patterns are treated as:
 **Mode = skip**
 
 ---
+[//]: # (Obsolete, no longer valid - to be removed)
 
-#### 2.1.4. Config-change detection (Maven vs Gradle)
+[//]: # (#### 2.1.4. Config-change detection &#40;Maven vs Gradle&#41;)
 
-The central workflow detects changes between the pushed commits and classifies them as:
+[//]: # ()
+[//]: # (The central workflow detects changes between the pushed commits and classifies them as:)
 
-- **POM change** (Maven config changed): e.g. `**/pom.xml`, `**/*.pom`
-- **Gradle config change**: e.g.
-  - `**/build.gradle`, `**/build.gradle.kts`
-  - `**/settings.gradle`, `**/settings.gradle.kts`
-  - `**/gradle.properties`
-  - `gradle/**` (wrapper/config)
-  - `buildSrc/**`
-  - `gradlew`, `gradlew.bat`
+[//]: # ()
+[//]: # (- **POM change** &#40;Maven config changed&#41;: e.g. `**/pom.xml`, `**/*.pom`)
 
-This is used to decide which build tool(s) to run in **auto** mode.
+[//]: # (- **Gradle config change**: e.g.)
+
+[//]: # (  - `**/build.gradle`, `**/build.gradle.kts`)
+
+[//]: # (  - `**/settings.gradle`, `**/settings.gradle.kts`)
+
+[//]: # (  - `**/gradle.properties`)
+
+[//]: # (  - `gradle/**` &#40;wrapper/config&#41;)
+
+[//]: # (  - `buildSrc/**`)
+
+[//]: # (  - `gradlew`, `gradlew.bat`)
+
+[//]: # ()
+[//]: # (This is used to decide which build tool&#40;s&#41; to run in **auto** mode.)
+
+[//]: # ()
+[//]: # (---)
+
+[//]: # ()
+[//]: # (#### 2.1.5. Build Tool Selection)
+
+[//]: # ()
+[//]: # (The pipeline can run **Gradle**, **Maven**, or **both** in a single CI run.)
+
+[//]: # ()
+[//]: # (##### 2.1.5.1 Repository configuration file &#40;optional&#41;)
+
+[//]: # ()
+[//]: # (Add an optional file at repository root:)
+
+[//]: # ()
+[//]: # (- `algites-repository.properties`)
+
+[//]: # ()
+[//]: # (Example:)
+
+[//]: # ()
+[//]: # (```properties)
+
+[//]: # (algites.build-tool=maven)
+
+[//]: # (```)
+
+[//]: # ()
+[//]: # (Supported values:)
+
+[//]: # ()
+[//]: # (- `algites.build-tool=gradle`)
+
+[//]: # (- `algites.build-tool=maven`)
+
+[//]: # (- `algites.build-tool=auto`)
+
+[//]: # ()
+[//]: # (If the file is missing &#40;or set to `auto`&#41;, optimized auto-selection is used.)
+
+[//]: # ()
+[//]: # (##### 2.1.5.2 Optimized auto-selection rules)
+
+[//]: # ()
+[//]: # (If `algites.build-tool` is not forced &#40;file missing or set to `auto`, and workflow input is `auto`&#41;:)
+
+[//]: # ()
+[//]: # (- If **POM changed** → run **Maven only**)
+
+[//]: # (- Else if **Gradle config changed** → run **Gradle**)
+
+[//]: # (- Else &#40;no POM/Gradle config change&#41; → run **Gradle**)
+
+[//]: # (- If **both POM and Gradle config changed** → run **both Maven and Gradle**)
+
+[//]: # ()
+[//]: # (If `algites.build-tool` is forced to `maven` or `gradle`, only that tool runs &#40;even if both configs changed&#41;.)
+
+[//]: # ()
+[//]: # (##### 2.1.5.3 Practical note &#40;double execution&#41;)
+
+[//]: # ()
+[//]: # (If both Maven and Gradle configurations are changed, CI will execute **both toolchains**.)
+
+[//]: # (To keep changes easier to review and to avoid multiple CI runs across separate pushes, it is usually best to)
+
+[//]: # (change Maven + Gradle config together **in one commit** &#40;or one push&#41;.)
+
+#### 2.1.5. Build Tool - Gradle
+
+The unified build is based uniquely on Grafdle in all repositories. But for every artifacts Gradle produces also the Maven artifacts to allow free usage of the generated products also from Maven buuilding system. Artifacts are published by gradle in the maven repositories.
+
+##### 2.1.5.1 Gradle bootstrap handling
+
+###### 2.1.5.1.1 Scope and lifecycle classification
+
+Gradle bootstrap handling defines **how a build is initialized** before any build policy, dependency resolution, or project configuration takes place.
+
+This topic belongs to **Lifecycle Management**, not to Development Structure, because it governs:
+- initialization order
+- trust-domain separation
+- synchronization timing
+- propagation of changes over time
+
+Bootstrap handling is therefore a *process concern*, not a static layout concern.
 
 ---
 
-#### 2.1.5. Build Tool Selection
+###### 2.1.5.1.2 Core principles
 
-The pipeline can run **Gradle**, **Maven**, or **both** in a single CI run.
+The following principles are normative:
 
-##### 2.1.5.1 Repository configuration file (optional)
+- **Bootstrap is not a versioned artifact**
+    - No semantic versioning
+    - Evolution is tracked exclusively by Git history (commits, PRs)
 
-Add an optional file at repository root:
+- **Bootstrap is per trust domain**
+    - There is no global bootstrap
+    - Public and private governance maintain separate bootstrap material
 
-- `algites-repository.properties`
+- **Private bootstrap extends public bootstrap, never the opposite**
 
-Example:
+- **Synchronization is pull-based and local**
+    - Each repository updates its own bootstrap
+    - No central CI with global write access
 
-```properties
-algites.build-tool=maven
+---
+
+###### 2.1.5.1.3 Trust domains
+
+Algites distinguishes at least two trust domains:
+
+- **Public governance**
+    - Fully public
+    - No knowledge of private infrastructure
+
+- **Private governance**
+    - Non-public
+    - May read public bootstrap
+    - Never exposed to public systems
+
+The existence or structure of private repositories is limited to Algites authorized personal.
+
+---
+
+###### 2.1.5.1.4 Canonical directory layout
+
+The bootstrap is represented as a **directory**, not a single file, to allow future extensions.
+
+####### 2.1.5.1.4.1 Public governance repository
+
+```
+repository/
+└─ bootstrap/
+   └─ gradle/
+      └─ pub/
+         └─ algites-repository-gradle-bootstrap-pub.kts
 ```
 
-Supported values:
-
-- `algites.build-tool=gradle`
-- `algites.build-tool=maven`
-- `algites.build-tool=auto`
-
-If the file is missing (or set to `auto`), optimized auto-selection is used.
-
-##### 2.1.5.2 Optimized auto-selection rules
-
-If `algites.build-tool` is not forced (file missing or set to `auto`, and workflow input is `auto`):
-
-- If **POM changed** → run **Maven only**
-- Else if **Gradle config changed** → run **Gradle**
-- Else (no POM/Gradle config change) → run **Gradle**
-- If **both POM and Gradle config changed** → run **both Maven and Gradle**
-
-If `algites.build-tool` is forced to `maven` or `gradle`, only that tool runs (even if both configs changed).
-
-##### 2.1.5.3 Practical note (double execution)
-
-If both Maven and Gradle configurations are changed, CI will execute **both toolchains**.
-To keep changes easier to review and to avoid multiple CI runs across separate pushes, it is usually best to
-change Maven + Gradle config together **in one commit** (or one push).
+Characteristics:
+- Contains only public bootstrap material
+- Defines public bootstrap repositories (e.g. Maven Central, public snapshot repositories)
+- Contains no credentials and no private endpoints
 
 ---
 
-#### 2.1.6. What Gets Executed (by Mode)
+####### 2.1.5.1.4.2 Private governance repository
 
-##### 2.1.6.1 Mode = approval
+```
+repository/
+└─ bootstrap/
+   └─ gradle/
+      ├─ pub/    # synchronized from public governance
+      │  └─ algites-repository-gradle-bootstrap-pub.kts
+      └─ priv/
+         └─ algites-repository-gradle-bootstrap-priv.kts
+```
+
+Rules:
+- `pub/` is a read-only mirror of public bootstrap
+- `priv/` extends the public bootstrap locally
+- Public systems never see `priv/`
+
+---
+
+###### 2.1.5.1.5 Bootstrap composition
+
+####### 2.1.5.1.5.1 Public bootstrap
+
+Responsibilities:
+- Define **public bootstrap repositories only**
+- Typical content:
+    - `gradlePluginPortal()`
+    - `mavenCentral()`
+    - public snapshot repositories
+
+Public bootstrap must not contain:
+- private repository URLs
+- credentials
+- internal mirrors
+
+---
+
+####### 2.1.5.1.5.2 Private bootstrap
+
+The private bootstrap **imports the public bootstrap** and adds private repositories.
+
+Conceptual structure:
+
+```kotlin
+apply(from = file("../pub/algites-repository-gradle-bootstrap-pub.kts"))
+
+pluginManagement {
+    repositories {
+        // private release repositories
+        // private snapshot repositories
+    }
+}
+```
+
+Properties:
+- Public baseline is always evaluated first
+- Private additions are strictly additive
+- Evaluation occurs locally at build time
+
+---
+
+###### 2.1.5.1.6 Usage in repositories
+
+####### 2.1.5.1.6.1 Public repositories
+
+Public repositories contain:
+
+```
+repository/bootstrap/gradle/
+```
+
+`settings.gradle.kts` applies:
+
+```kotlin
+apply(from = "repository/bootstrap/gradle/pub/algites-repository-gradle-bootstrap-pub.kts")
+```
+
+---
+
+####### 2.1.5.1.6.2 Private repositories
+
+Private repositories contain:
+
+```
+repository/bootstrap/gradle/
+```
+
+`settings.gradle.kts` applies:
+
+```kotlin
+apply(from = "repository/bootstrap/gradle/priv/algites-repository-gradle-bootstrap-priv.kts")
+```
+
+---
+
+###### 2.1.5.1.7 Synchronization and determinism
+
+####### 2.1.5.1.7.1 Deterministic ordering
+
+To guarantee deterministic propagation, synchronization follows this order:
+
+1. Public governance updates first
+2. Private governance synchronizes public bootstrap (earlier schedule)
+3. Private repositories synchronize governance later
+
+This guarantees that private bootstrap evaluation always references the current public baseline.
+
+---
+
+####### 2.1.5.1.7.2 Automation model
+
+- Synchronization is executed by **local CI in each repository**
+- Typical schedule:
+    - Public → Private governance: *T − Δ*
+    - Governance → private repositories: *T*
+
+Workflow:
+- Pull updated `repository/bootstrap/gradle/`
+- If changes exist:
+    - create commit
+    - open Pull Request
+- No automatic merge is permitted
+
+---
+
+###### 2.1.5.1.8 Security properties
+
+This design guarantees:
+
+- No repository enumeration
+- No cross-repository write access
+- No disclosure of private repository existence
+- No indirect metadata leakage
+
+Security is achieved **by construction**, not by convention.
+
+---
+
+###### 2.1.5.1.9 Normative summary
+
+- Gradle bootstrap handling is a **Lifecycle concern**
+- Bootstrap is directory-based, not artifact-based
+- Public and private trust domains are strictly separated
+- Private bootstrap always layers on top of public bootstrap
+- Synchronization is pull-based, deterministic, and auditable
+
+This mechanism is considered **stable** and ready for implementation.
+
+---
+
+##### 2.1.5.2. What Gets Executed (by Mode)
+
+###### 2.1.5.2.1 Mode = approval
 
 - Gradle (default): `./gradlew check`
-- Maven (default): `mvn verify`
 
-##### 2.1.6.2 Mode = verification
+###### 2.1.5.2.2 Mode = verification
 
 - Gradle (default): `./gradlew test integrationTest`
-- Maven (default): `mvn -DskipPackaging=true verify`
 
-##### 2.1.6.3 Mode = construction
+###### 2.1.5.2.3 Mode = construction
 
 - Gradle (default): `./gradlew testClasses`
-- Maven (default): `mvn test-compile`
 
-##### 2.1.6.4 Mode = skip
+###### 2.1.5.2.4 Mode = skip
 
 Exit early after logging the decision.
 
 ---
 
-#### 2.1.7. Java Version Resolution
+##### 2.1.5.3. Java Version Resolution
 
 If Java version is not provided explicitly, the workflow auto-detects it in this order:
 
@@ -218,12 +478,12 @@ If Java version is not provided explicitly, the workflow auto-detects it in this
 
 ---
 
-#### 2.1.8. Issue references (optional but recommended)
+#### 2.1.5.4. Issue references (optional but recommended)
 
 Algites CI can automatically detect **GitHub Issue references** related to a build and display them in the
 Actions **Job Summary** as clickable links.
 
-##### 2.1.8.1 Branch naming convention (strict)
+##### 2.1.5.4.1 Branch naming convention (strict)
 
 For feature branches, prefix the feature “slug” with an explicit **ID marker** and terminate it with an underscore:
 
@@ -239,7 +499,7 @@ Cross-repository shorthand (Algites-EU only) is also supported:
 > The `ID.` prefix is **required** in branch names to avoid accidental matches (e.g. variant branches like `jvm17/*` or `and21/*`).
 > The underscore `_` acts as the delimiter that ends the issue reference.
 
-##### 2.1.8.2 Commit message convention (flexible)
+##### 2.1.5.4.2 Commit message convention (flexible)
 
 In commit subjects, CI detects references introduced by `#`.
 
@@ -250,7 +510,7 @@ Supported forms:
 - `#pub.tool.Java-123` (cross-repo shorthand, Algites-EU only)
 - `#ID.pub.tool.Java-123` (same as above)
 
-##### 2.1.8.3 What CI does with it
+##### 2.1.5.4.3 What CI does with it
 
 If issue references are detected (from branch name and/or commit subjects), CI will:
 
@@ -262,7 +522,7 @@ If issue references are detected (from branch name and/or commit subjects), CI w
 
 ---
 
-#### 2.1.9. Recommendations
+#### 2.1.6. Recommendations
 
 - Prefer variant branching (`jvm17/*`, `jvm21/*`, `and21/*`, `mps2025.1/*`) to keep cross-variant feature migration explicit.
 - Use `feature-testrun/*` for safe CI experiments without publishing.
